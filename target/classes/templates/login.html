@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login y Registro</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #222;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-width: 750px;
+            height: 100vh;
+        }
+        .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 80%;
+            max-width: 850px;
+            min-width: 450px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+        .form-container {
+            width: 35%;
+            padding: 50px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+        }
+        h1 {
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group.checkbox-group {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #8a060b;
+            border-radius: 4px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #b20710;
+        }
+        .error-message {
+            color: red;
+            text-align: center;
+        }
+        hr {
+            width: 2px;
+            height: 50%;
+            border: 2px solid #ccc;
+            margin: 30px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Formulario de Login -->
+        <div class="form-container">
+            <h2>Login usuario</h2>
+            <form action="/login" method="post">
+                <div class="form-group">
+                    <input type="email" id="emailLogin" placeholder="Correo electrónico" name="email" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="passwordLogin" placeholder="Contraseña" name="password" required>
+                </div>
+                <button type="submit">Iniciar sesión</button>
+            </form>
+        </div>
+
+        <hr>
+
+        <!-- Formulario de Registro -->
+        <div class="form-container">
+            <h2>Registro usuario</h2>
+            <form id="formUsuario">
+                <div class="form-group">
+                    <input type="text" id="nombre" placeholder="Nombre" name="nombre" required>
+                </div>
+                <div class="form-group">
+                    <input type="email" id="email" placeholder="Correo electrónico" name="email" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="password" placeholder="Contraseña" name="password" required>
+                </div>
+                <div class="form-group checkbox-group">
+                    <label for="isPremium">Premium:</label>
+                    <input type="checkbox" id="isPremium" name="isPremium" value="true">
+                </div>
+                <div class="form-group">
+                    <label for="rol">Rol:</label>
+                    <select id="rol" name="rol">
+                        <option value="ADMIN">Admin</option>
+                        <option value="CLIENTE">Cliente</option>
+                    </select>
+                </div>
+                <button type="submit">Registrar</button>
+            </form>
+            <div id="error-message" class="error-message"></div>
+        </div>
+    </div>
+
+    <script>
+        // Manejador para el formulario de registro
+        document.getElementById('formUsuario').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevenir el envío tradicional del formulario.
+
+            const formData = new FormData(this);
+            formData.append("rol", document.getElementById("rol").value);
+
+            fetch('/public/usuarios/crear', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert("Usuario creado correctamente");
+                    // Limpiar el formulario o redirigir según sea necesario
+                    document.getElementById('formUsuario').reset();
+                    setTimeout(() => { window.location.href = "/admin"; }, 2000);
+                } else {
+                    response.text().then(text => {
+                        document.getElementById('error-message').innerText = "Error: " + text;
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Hubo un problema al crear el usuario");
+            });
+        });
+    </script>
+</body>
+</html>

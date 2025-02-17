@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MegaStream - Series</title>
+  <style>
+    /* Reset de estilos */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      color: #333;
+      min-width: 750px;
+      min-height: 100vh;
+    }
+    
+    /* Estilos para el header */
+    header {
+      background-color: #222;
+      color: #fff;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+    
+    header h1 {
+      font-size: 2em;
+    }
+    
+    .search-container {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+    
+    .search-bar {
+      display: flex;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+    
+    .search-bar input[type="text"] {
+      padding: 8px;
+      border: none;
+      border-radius: 4px 0 0 4px;
+      width: 200px;
+    }
+    
+    .search-bar button {
+      padding: 8px 12px;
+      border: none;
+      background-color: #e50914;
+      color: #fff;
+      cursor: pointer;
+      border-radius: 0 4px 4px 0;
+    }
+    
+    .search-bar button:hover {
+      background-color: #bf0810;
+    }
+    
+    .genre-filter {
+      margin-bottom: 5px;
+    }
+    
+    .genre-filter select {
+      padding: 8px;
+      border: none;
+      border-radius: 4px;
+      width: 220px;
+    }
+    
+    .logout-btn {
+      background-color: transparent;
+      border: 1px solid #fff;
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 0.9em;
+      margin-top: 5px;
+    }
+    
+    .logout-btn:hover {
+      background-color: #fff;
+      color: #222;
+    }
+    
+    /* Estilos para la galería */
+    .gallery-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      padding: 20px;
+    }
+    
+    .movie-card {
+      background-color: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+      text-align: center;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .movie-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    
+    .movie-card img {
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+    }
+    
+    .movie-card .movie-title {
+      padding: 10px;
+      font-size: 1.1em;
+      font-weight: bold;
+      color: #222;
+      flex-grow: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Cabecera con el título, búsqueda, filtro y logout -->
+<header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; background-color: #222; color: #fff; padding: 10px 20px;">
+  <!-- Menú de navegación a la izquierda -->
+  <nav style="display: flex; align-items: center;">
+    <a href="/index" style="margin-right: 20px; font-weight: bold; color: #fff; text-decoration: none;">Películas</a>
+    <a href="/series" style="margin-right: 20px; font-weight: bold; color: #fff; text-decoration: none;">Series</a>
+  </nav>
+
+  <!-- Título o logo (opcional) -->
+  <h1 style="margin: 0; font-size: 2em;">MegaStream</h1>
+
+  <!-- Contenedor de búsqueda y logout a la derecha -->
+  <div class="search-container" style="display: flex; flex-direction: column; align-items: flex-end;">
+    <div class="search-bar" style="display: flex; align-items: center; margin-bottom: 5px;">
+      <input type="text" id="searchInput" placeholder="Buscar películas..." style="padding: 8px; border: none; border-radius: 4px 0 0 4px; width: 200px;">
+      <button id="searchButton" style="padding: 8px 12px; border: none; background-color: #e50914; color: #fff; cursor: pointer; border-radius: 0 4px 4px 0;">Buscar</button>
+    </div>
+    <div class="genre-filter" style="margin-bottom: 5px;">
+      <select id="genreFilter" style="padding: 8px; border: none; border-radius: 4px; width: 220px;">
+        <option value="">Filtrar por género</option>
+        <option value="Drama">Drama</option>
+        <option value="Comedia">Comedia</option>
+        <option value="Accion">Acción</option>
+        <option value="Ciencia ficcion">Ciencia ficción</option>
+        <option value="Thriller">Thriller</option>
+      </select>
+    </div>
+    <a href="/logout" class="logout-btn" style="background-color: transparent; border: 1px solid #fff; color: #fff; padding: 6px 12px; border-radius: 4px; cursor: pointer; text-decoration: none; font-size: 0.9em;">Logout</a>
+  </div>
+</header>
+
+  <!-- Contenedor principal para la galería -->
+  <main>
+    <div class="gallery-container" id="gallery">
+      <!-- Se cargarán las tarjetas de series aquí -->
+    </div>
+  </main>
+
+  <script>
+    const BASE_URL = 'http://localhost:8080';
+
+    // Crea una tarjeta para cada serie.
+    function createSerieCard(serie) {
+      const card = document.createElement('a');
+      card.href = '/serie?id=' + serie.idSerie;
+      card.className = 'movie-card'; // Reutilizamos la misma clase para estilos
+      const img = document.createElement('img');
+      // Se espera que serie.imgURL tenga la ruta local, por ejemplo: "/portadas/series/1.jpg"
+      img.src = serie.imgURL;
+      img.alt = serie.nombre;
+      const title = document.createElement('div');
+      title.className = 'movie-title';
+      title.textContent = serie.nombre;
+      card.appendChild(img);
+      card.appendChild(title);
+      return card;
+    }
+
+    // Muestra los resultados en la galería.
+    function mostrarResultados(data) {
+      const gallery = document.getElementById('gallery');
+      gallery.innerHTML = ''; // Limpiar resultados anteriores.
+
+      if (data.length === 0) {
+        gallery.innerHTML = '<p>No se encontraron series.</p>';
+        return;
+      }
+
+      data.forEach(serie => {
+        gallery.appendChild(createSerieCard(serie));
+      });
+    }
+
+    // Función para buscar series por nombre.
+    function buscarPorNombre(nombre) {
+      fetch(`${BASE_URL}/cliente/series/buscarNombre?nombre=${encodeURIComponent(nombre)}`)
+        .then(response => response.json())
+        .then(data => mostrarResultados(data))
+        .catch(error => {
+          console.error('Error al buscar por nombre:', error);
+          alert('Error al buscar series por nombre.');
+        });
+    }
+
+    // Función para buscar series por género.
+    function buscarPorGenero(genero) {
+      fetch(`${BASE_URL}/cliente/series/buscarGenero?genero=${encodeURIComponent(genero)}`)
+        .then(response => response.json())
+        .then(data => mostrarResultados(data))
+        .catch(error => {
+          console.error('Error al buscar por género:', error);
+          alert('Error al buscar series por género.');
+        });
+    }
+
+    // Carga todas las series al iniciar la aplicación.
+    function cargarTodasSeries() {
+      fetch(`${BASE_URL}/cliente/series/mostrar`)
+        .then(response => response.json())
+        .then(data => mostrarResultados(data))
+        .catch(error => {
+          console.error('Error al cargar todas las series:', error);
+        });
+    }
+
+    // Eventos para el recuadro de búsqueda y el filtro de género.
+    document.getElementById('searchButton').addEventListener('click', function() {
+      const nombre = document.getElementById('searchInput').value.trim();
+      if (nombre) {
+        buscarPorNombre(nombre);
+      }
+    });
+
+    // Permitir buscar al presionar la tecla Enter.
+    document.getElementById('searchInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const nombre = this.value.trim();
+        if (nombre) {
+          buscarPorNombre(nombre);
+        }
+      }
+    });
+
+    // Al cambiar la selección del filtro de género se dispara la búsqueda.
+    document.getElementById('genreFilter').addEventListener('change', function() {
+      const genero = this.value;
+      if (genero) {
+        buscarPorGenero(genero);
+      }
+    });
+
+    // Llamada inicial para cargar todas las series.
+    cargarTodasSeries();
+  </script>
+</body>
+</html>

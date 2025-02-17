@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MegaStream - Detalle de Película</title>
+  <style>
+    /* Reset */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      min-width: 650px;
+      color: #333;
+    }
+    /* Cabecera */
+    header {
+      background-color: #222;
+      color: #fff;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+    header nav a {
+      margin-right: 20px;
+      font-weight: bold;
+      color: #fff;
+      text-decoration: none;
+    }
+    header h1 {
+      font-size: 2em;
+      margin: 0;
+    }
+    /* Contenedor principal */
+    main {
+      padding: 20px;
+    }
+    /* Sección de detalle de película */
+    .movie-detail {
+      display: flex;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .movie-cover {
+      width: 300px;
+      height: 450px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-right: 20px;
+      flex-shrink: 0;
+    }
+    .movie-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+    .movie-info h2 {
+      margin-bottom: 10px;
+      font-size: 2em;
+    }
+    .movie-info p {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    /* Sección de comentarios */
+    .comment-section {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .comment-section h3 {
+      margin-bottom: 10px;
+    }
+    .comment-form textarea {
+      width: 100%;
+      height: 80px;
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .comment-form button {
+      padding: 8px 16px;
+      background-color: #e50914;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .comment-form button:hover {
+      background-color: #bf0810;
+    }
+    .comment-list {
+      margin-top: 20px;
+    }
+    .comment {
+      background-color: #f9f9f9;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+    .comment small {
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+<!-- Cabecera con enlaces a Películas y Series -->
+<header>
+  <nav>
+    <a href="/index">Películas</a>
+    <a href="/series">Series</a>
+  </nav>
+
+    <!-- Título centrado -->
+    <h1 style="flex-grow: 1; text-align: center;">MegaStream</h1>
+
+    <!-- Formulario de puntuación -->
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <form id="agregarPuntuacionForm" style="display: flex; gap: 8px; align-items: center;">
+        <input type="number"
+               name="nota"
+               placeholder="Puntuar (0-10)"
+               step="0.5"
+               min="0"
+               max="10"
+               required
+               style="padding: 6px; width: 120px;">
+        <button type="submit"
+                style="padding: 6px 12px; background-color: #e50914; color: white; border: none; border-radius: 4px;">
+          Enviar
+        </button>
+      </form>
+    </div>
+</header>
+
+<!-- Contenedor principal -->
+<main>
+  <div id="movieDetailContainer"></div>
+</main>
+
+<script>
+  const BASE_URL = 'http://localhost:8080';
+  // Es importante obtener idPelicula ahora.
+  const movieId = getParameterByName('id');
+
+    let currentUserId = null;
+    let currentUserRol = null;
+
+  // Función para obtener usuario autenticado (NUEVO)
+  function obtenerUsuarioActual() {
+    return fetch(`${BASE_URL}/cliente/usuario/actual`)
+      .then(response => {
+        if (!response.ok) throw new Error('No autenticado');
+        return response.json();
+      })
+      .then(usuario => {
+        currentUserId = usuario.idUsuario;
+        currentUserRol = usuario.rol;
+      })
+      .catch(error => {
+        console.error('Error obteniendo usuario:', error);
+      });
+  }
+
+      // Manejar el formulario de puntuación.
+  document.getElementById('agregarPuntuacionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const nota = parseFloat(this.elements['nota'].value);
+
+    if (isNaN(nota) || nota < 0 || nota > 10) {
+        alert('Por favor introduce una puntuación válida');
+        return;
+    }
+
+    // Usamos las variables ya existentes en el contexto
+    fetch(`${BASE_URL}/cliente/peliculas/puntuar`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `idUsuario=${currentUserId}&idPelicula=${movieId}&nota=${nota}`
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Error en la puntuación');
+        return response.text();
+    })
+    .then(message => {
+        alert(message);
+        this.reset();
+        // Recargar detalles para actualizar puntuación media
+        cargarDetallePelicula();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert(error.message);
+    });
+  });
+
+  // Función para obtener parámetros de la URL
+  function getParameterByName(name, url = window.location.href) {
+    name = name.replace(/[\[\]]/g, '\\$&');
+    const regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+          results = regex.exec(url);
+    if (!results) return null;
+    if (!results[2]) return '';
+    return decodeURIComponent(results[2].replace(/\+/g, ' '));
+  }
+
+  // Renderiza el detalle de la película.
+  function renderMovieDetail(movie) {
+    const container = document.getElementById('movieDetailContainer');
+    container.innerHTML = '';
+
+    // Sección de la película: carátula e información
+    const detailDiv = document.createElement('div');
+    detailDiv.className = 'movie-detail';
+
+    // Carátula
+    const coverImg = document.createElement('img');
+    coverImg.className = 'movie-cover';
+    coverImg.src = movie.imgURL;
+    coverImg.alt = 'Carátula de ' + movie.nombre;
+
+    // Información de la película
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'movie-info';
+    infoDiv.innerHTML = `
+      <h2>${movie.nombre}</h2>
+      <p><strong>Género:</strong> ${movie.genero ? movie.genero : 'No disponible'}</p>
+      <p><strong>Director:</strong> ${movie.director && movie.director.nombre ? movie.director.nombre : 'No disponible'}</p>
+      <p><strong>Sinopsis:</strong> Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed sit amet ligula a libero posuere scelerisque.</p>
+      <p><strong>Actores:</strong> ${movie.actores ? movie.actores.map(actor => actor.nombre).join(', ') : 'No disponible'}</p>
+    `;
+
+    detailDiv.appendChild(coverImg);
+    detailDiv.appendChild(infoDiv);
+
+    // Sección de comentarios: formulario y lista
+    const commentSection = document.createElement('div');
+    commentSection.className = 'comment-section';
+
+    // Formulario para agregar comentario
+    const commentFormDiv = document.createElement('div');
+    commentFormDiv.className = 'comment-form';
+    commentFormDiv.innerHTML = `
+      <h3>Agregar Comentario</h3>
+      <form id="agregarComentarioForm">
+        <textarea name="comentario" placeholder="Escribe tu comentario..." required></textarea>
+        <button type="submit">Enviar</button>
+      </form>
+      <div id="commentMessage"></div>
+    `;
+
+    // Lista de comentarios
+    const commentListDiv = document.createElement('div');
+    commentListDiv.className = 'comment-list';
+    commentListDiv.innerHTML = `<h3>Comentarios</h3>`;
+
+    commentSection.appendChild(commentFormDiv);
+    commentSection.appendChild(commentListDiv);
+
+    // Agregar ambas secciones al contenedor principal
+    container.appendChild(detailDiv);
+    container.appendChild(commentSection);
+
+    // Manejador para enviar nuevo comentario
+    document.getElementById('agregarComentarioForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const comentario = this.elements['comentario'].value.trim();
+      if (!comentario) {
+        alert('Por favor, escribe un comentario.');
+        return;
+      }
+      // Enviar comentario al endpoint /cliente/comentarios/add.
+      fetch(`${BASE_URL}/cliente/comentarios/add`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `id=${encodeURIComponent(movieId)}&texto=${encodeURIComponent(comentario)}&tipo=${encodeURIComponent("pelicula")}`
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Error al agregar comentario');
+        }
+        return response.json();
+      })
+      .then(data => {
+        document.getElementById('commentMessage').innerText = 'Comentario agregado con éxito.';
+        this.reset();
+        cargarComentarios(movieId);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error al agregar el comentario: ' + error.message);
+      });
+    });
+
+    // Cargar los comentarios existentes
+    cargarComentarios(movieId);
+  }
+
+  // Función para cargar comentarios.
+function cargarComentarios(movieId) {
+  fetch(`${BASE_URL}/cliente/comentarios/mostrar?id=${movieId}&tipo=pelicula`)
+    .then(response => {
+      if (response.status === 204) return [];
+      return response.json();
+    })
+    .then(comentarios => {
+      const commentListDiv = document.querySelector('.comment-list');
+      commentListDiv.innerHTML = '<h3>Comentarios</h3>';
+      if (comentarios.length === 0) {
+        commentListDiv.innerHTML += '<p>No hay comentarios.</p>';
+      } else {
+        comentarios.forEach(comentario => {
+          const commentDiv = document.createElement('div');
+          commentDiv.className = 'comment';
+          commentDiv.innerHTML = `
+            <p>${comentario.comentario}</p>
+            <small>Por: ${comentario.usuario?.nombre || 'Usuario'}</small>
+          `;
+
+          // Añadir enlace de eliminar si es el autor o admin (NUEVO)
+          if (currentUserId === comentario.usuario.idUsuario || currentUserRol === 'ADMIN') {
+            const deleteLink = document.createElement('a');
+            deleteLink.href = '#';
+            deleteLink.textContent = 'Eliminar';
+            deleteLink.style.marginLeft = '10px';
+            deleteLink.style.color = '#e50914';
+            deleteLink.onclick = (e) => {
+              e.preventDefault();
+              if (confirm('¿Eliminar comentario?')) {
+                eliminarComentario(comentario.idComentario);
+              }
+            };
+            commentDiv.appendChild(deleteLink);
+          }
+
+          commentListDiv.appendChild(commentDiv);
+        });
+      }
+    })
+    .catch(error => {
+      console.error('Error al cargar comentarios:', error);
+    });
+}
+
+  // Función para eliminar comentario.
+function eliminarComentario(comentarioId) {
+  fetch(`${BASE_URL}/cliente/comentarios/${comentarioId}`, {
+    method: 'DELETE',
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Error al eliminar');
+    cargarComentarios(movieId); // Recargar comentarios
+  })
+  .catch(error => alert(error.message));
+}
+
+  // Función para cargar el detalle de la película usando el endpoint /cliente/peliculas/{id}
+  function cargarDetallePelicula() {
+    if (!movieId) {
+      alert('No se proporcionó un ID de película.');
+      return;
+    }
+    fetch(`${BASE_URL}/cliente/peliculas/${movieId}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Película no encontrada.');
+        }
+        return response.json();
+      })
+      .then(movie => {
+        renderMovieDetail(movie);
+      })
+      .catch(error => {
+        console.error('Error al cargar la película:', error);
+        alert('Error al cargar los detalles de la película.');
+      });
+  }
+
+  // Modifica la carga inicial para obtener usuario primero.
+  window.addEventListener('load', () => {
+    obtenerUsuarioActual()
+      .then(cargarDetallePelicula)
+      .catch(error => console.error(error));
+  });
+</script>
+</body>
+</html>

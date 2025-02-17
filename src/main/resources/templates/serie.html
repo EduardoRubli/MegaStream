@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MegaStream - Detalle de Serie</title>
+  <style>
+    /* Reset */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      color: #333;
+      min-width: 650px;
+    }
+    /* Cabecera */
+    header {
+      background-color: #222;
+      color: #fff;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+    header nav a {
+      margin-right: 20px;
+      font-weight: bold;
+      color: #fff;
+      text-decoration: none;
+    }
+    header h1 {
+      font-size: 2em;
+      margin: 0;
+    }
+    /* Contenedor principal */
+    main {
+      padding: 20px;
+    }
+    /* Sección de detalle de serie */
+    .series-detail {
+      display: flex;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .series-cover {
+      width: 300px;
+      height: 450px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-right: 20px;
+      flex-shrink: 0;
+    }
+    .series-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+    .series-info h2 {
+      margin-bottom: 10px;
+    }
+    .series-info p {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    .capitulos-lista {
+      margin-left: 20px;
+      line-height: 1.5;
+    }
+    .capitulo-item {
+      margin-bottom: 5px;
+    }
+    /* Sección de comentarios */
+    .comment-section {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .comment-section h3 {
+      margin-bottom: 10px;
+    }
+    .comment-form textarea {
+      width: 100%;
+      height: 80px;
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .comment-form button {
+      padding: 8px 16px;
+      background-color: #e50914;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .comment-form button:hover {
+      background-color: #bf0810;
+    }
+    .comment-list {
+      margin-top: 20px;
+    }
+    .comment {
+      background-color: #f9f9f9;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+    .comment small {
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+<!-- Cabecera con enlaces a Películas y Series -->
+<header>
+  <nav>
+    <a href="/index">Películas</a>
+    <a href="/series">Series</a>
+  </nav>
+
+  <!-- Título centrado -->
+  <h1 style="flex-grow: 1; text-align: center;">MegaStream</h1>
+
+  <!-- Formulario de puntuación -->
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <form id="agregarPuntuacionForm" style="display: flex; gap: 8px; align-items: center;">
+      <input type="number"
+             name="nota"
+             placeholder="Puntuar (0-10)"
+             step="0.5"
+             min="0"
+             max="10"
+             required
+             style="padding: 6px; width: 120px;">
+      <button type="submit"
+              style="padding: 6px 12px; background-color: #e50914; color: white; border: none; border-radius: 4px;">
+        Enviar
+      </button>
+    </form>
+  </div>
+</header>
+
+<!-- Contenedor principal -->
+<main>
+  <!-- Detalle de la serie se renderiza dinámicamente -->
+  <div id="seriesDetailContainer"></div>
+
+  <!-- Sección de comentarios: formulario y lista -->
+  <div id="commentSection" class="comment-section">
+    <div class="comment-form">
+      <h3>Agregar Comentario</h3>
+      <form id="agregarComentarioForm">
+        <textarea name="comentario" placeholder="Escribe tu comentario..." required></textarea>
+        <button type="submit">Enviar</button>
+        <div id="commentMessage"></div>
+      </form>
+    </div>
+    <div class="comment-list">
+      <h3>Comentarios</h3>
+    </div>
+  </div>
+</main>
+
+<script>
+  const BASE_URL = 'http://localhost:8080';
+  const serieId = new URLSearchParams(window.location.search).get('id');
+
+  let currentUserId = null;
+  let currentUserRol = null;
+
+  function obtenerUsuarioActual() {
+    return fetch(`${BASE_URL}/cliente/usuario/actual`)
+        .then(response => {
+            if (!response.ok) throw new Error('No autenticado');
+            return response.json();
+        })
+        .then(usuario => {
+            currentUserId = usuario.idUsuario;
+            currentUserRol = usuario.rol;
+        })
+        .catch(error => {
+            console.error('Error obteniendo usuario:', error);
+        });
+  }
+
+        // Manejamos el formulario de puntuación.
+  document.getElementById('agregarPuntuacionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const nota = parseFloat(this.elements['nota'].value);
+
+    if (isNaN(nota) || nota < 0 || nota > 10) {
+        alert('Por favor introduce una puntuación válida');
+        return;
+    }
+
+    // Usamos las variables ya existentes en el contexto
+    fetch(`${BASE_URL}/cliente/series/puntuar`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `idUsuario=${currentUserId}&idSerie=${serieId}&nota=${nota}`
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Error en la puntuación');
+        return response.text();
+    })
+    .then(message => {
+        alert(message);
+        this.reset();
+        // Recargar detalles para actualizar puntuación media
+        cargarDetallePelicula();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert(error.message);
+    });
+  });
+
+  // Renderiza el detalle de la serie, mostrando la carátula e información con formato
+  function renderSeriesDetail(series) {
+    const container = document.getElementById('seriesDetailContainer');
+    container.innerHTML = '';
+
+    const detailDiv = document.createElement('div');
+    detailDiv.className = 'series-detail';
+
+    // Carátula de la serie
+    const coverImg = document.createElement('img');
+    coverImg.className = 'series-cover';
+    coverImg.src = series.imgURL || 'placeholder.jpg';
+    coverImg.alt = 'Carátula de ' + series.nombre;
+
+    // Información de la serie
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'series-info';
+
+    // Construye la lista de capítulos
+    const capitulosHTML = series.capitulos && series.capitulos.length
+      ? `<ul class="capitulos-lista">${series.capitulos.map(cap =>
+          `<li class="capitulo-item">${cap.nombre} - Duración: ${cap.duracion} min</li>`).join('')}</ul>`
+      : '<p>No disponible</p>';
+
+    infoDiv.innerHTML = `
+      <h2>${series.nombre}</h2>
+      <p><strong>Director:</strong> ${series.director && series.director.nombre ? series.director.nombre : 'No disponible'}</p>
+      <p><strong>Actores:</strong> ${series.actores && series.actores.length ? series.actores.map(actor => actor.nombre).join(', ') : 'No disponible'}</p>
+      <p><strong>Lista de capítulos:</strong></p>
+      ${capitulosHTML}
+    `;
+
+    detailDiv.appendChild(coverImg);
+    detailDiv.appendChild(infoDiv);
+    container.appendChild(detailDiv);
+  }
+
+  // Carga el detalle de la serie.
+  function cargarDetalleSerie() {
+    if (!serieId) {
+      alert('No se proporcionó un ID de serie.');
+      return;
+    }
+    fetch(`${BASE_URL}/cliente/series/${serieId}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Serie no encontrada.');
+        }
+        return response.json();
+      })
+      .then(series => {
+        renderSeriesDetail(series);
+        cargarComentarios(serieId); // Carga los comentarios una vez mostrada la serie
+      })
+      .catch(error => {
+        console.error('Error al cargar la serie:', error);
+        alert('Error al cargar los detalles de la serie.');
+      });
+  }
+
+  function cargarComentarios(serieId) {
+    fetch(`${BASE_URL}/cliente/comentarios/mostrar?id=${serieId}&tipo=serie`)
+        .then(response => {
+            if (response.status === 204) return [];
+            return response.json();
+        })
+        .then(comentarios => {
+            const commentListDiv = document.querySelector('.comment-list');
+            commentListDiv.innerHTML = '<h3>Comentarios</h3>';
+            if (comentarios.length === 0) {
+                commentListDiv.innerHTML += '<p>No hay comentarios.</p>';
+            } else {
+                comentarios.forEach(comentario => {
+                    const commentDiv = document.createElement('div');
+                    commentDiv.className = 'comment';
+                    commentDiv.innerHTML = `
+                        <p>${comentario.comentario}</p>
+                        <small>Por: ${comentario.usuario?.nombre || 'Usuario'}</small>
+                    `;
+
+                    // Añadir enlace de eliminar si es el autor o admin
+                    if (currentUserId === comentario.usuario.idUsuario || currentUserRol === 'ADMIN') {
+                        const deleteLink = document.createElement('a');
+                        deleteLink.href = '#';
+                        deleteLink.textContent = 'Eliminar';
+                        deleteLink.style.marginLeft = '10px';
+                        deleteLink.style.color = '#e50914';
+                        deleteLink.onclick = (e) => {
+                            e.preventDefault();
+                            if (confirm('¿Eliminar comentario?')) {
+                                eliminarComentario(comentario.idComentario);
+                            }
+                        };
+                        commentDiv.appendChild(deleteLink);
+                    }
+
+                    commentListDiv.appendChild(commentDiv);
+                });
+            }
+        })
+        .catch(error => console.error('Error cargando comentarios:', error));
+  }
+
+  // Función para eliminar comentario
+  function eliminarComentario(comentarioId) {
+    fetch(`${BASE_URL}/cliente/comentarios/${comentarioId}`, {
+        method: 'DELETE',
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Error al eliminar');
+        cargarComentarios(serieId); // Recargar comentarios
+    })
+    .catch(error => alert(error.message));
+  }
+
+  // Manejador para enviar un nuevo comentario (usando la lógica similar a la de película)
+  document.getElementById('agregarComentarioForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const comentario = this.elements['comentario'].value.trim();
+    if (!comentario) {
+      alert('Por favor, escribe un comentario.');
+      return;
+    }
+    // Enviar comentario al endpoint para series (se envía idSerie y el texto)
+    fetch(`${BASE_URL}/cliente/comentarios/add`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `id=${encodeURIComponent(serieId)}&texto=${encodeURIComponent(comentario)}&tipo=serie`
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Error al agregar comentario');
+      }
+      return response.json();
+    })
+    .then(data => {
+      document.getElementById('commentMessage').innerText = 'Comentario agregado con éxito.';
+      this.reset();
+      cargarComentarios(serieId);
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Error al agregar el comentario: ' + error.message);
+    });
+  });
+
+  // Modificar la carga inicial para obtener el usuario primero
+  window.addEventListener('load', () => {
+    obtenerUsuarioActual()
+        .then(cargarDetalleSerie)
+        .catch(error => console.error(error));
+  });
+</script>
+</body>
+</html>
