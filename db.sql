@@ -99,8 +99,8 @@ CREATE TABLE comentario (
 
 INSERT INTO usuario (nombre, email, password, premium, rol) VALUES
 ('Eduardo', 'eduardo@fempa.es', '$2a$10$bm2iwDaNoZdPy8.6hCyiNeu2Ov0lKVsqWDdKP5caaVOiD3cgyDqj6', true, 'ADMIN'),
-('Jesus', 'jesus@fempa.es', '$2a$10$bm2iwDaNoZdPy8.6hCyiNeu2Ov0lKVsqWDdKP5caaVOiD3cgyDqj6', true, 'ADMIN'),
-('Sebastian', 'sebastian@fempa.es', '$2a$10$bm2iwDaNoZdPy8.6hCyiNeu2Ov0lKVsqWDdKP5caaVOiD3cgyDqj6', true, 'ADMIN'),
+('ACD', 'acd@admin.es', '$2a$12$9vPH6elgk7rKp8UuFhYo5O9Wxx4jg72DjpWf6zkgruYp/vuUhX36S', true, 'ADMIN'),
+('ACD', 'acd@cliente.es', '$2a$12$9vPH6elgk7rKp8UuFhYo5O9Wxx4jg72DjpWf6zkgruYp/vuUhX36S', true, 'CLIENTE'),
 ('Ana García', 'ana.garcia@example.com', '$2a$10$bm2iwDaNoZdPy8.6hCyiNeu2Ov0lKVsqWDdKP5caaVOiD3cgyDqj6', false, 'CLIENTE'),
 ('Carlos Martínez', 'carlos.martinez@example.com', '$2a$10$bm2iwDaNoZdPy8.6hCyiNeu2Ov0lKVsqWDdKP5caaVOiD3cgyDqj6', true, 'CLIENTE'),
 ('Laura Fernández', 'laura.fernandez@example.com', '$2a$10$bm2iwDaNoZdPy8.6hCyiNeu2Ov0lKVsqWDdKP5caaVOiD3cgyDqj6', false, 'CLIENTE'),
@@ -661,6 +661,8 @@ INSERT INTO comentario (comentario, idPelicula, idUsuario) VALUES
 ('Tarantino en estado puro, ¡obra maestra!', 4, 4),
 ('Los efectos especiales siguen impresionando.', 10, 5),
 ('Una experiencia cinematográfica única...', 3, 6),
+('Los efectos especiales están muy logrados.', 1, 12),
+('Una experiencia fabulosa, no me arrepiento.', 3, 10),
 ('De lo mejor del cine moderno.', 12, 7),
 ('La volvería a ver, ha sido emocionante.', 1, 20),
 ('La banda sonora es simplemente épica.', 14, 8),
