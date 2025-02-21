@@ -86,6 +86,39 @@ public class Serie {
         this.idSerie = idSerie;
     }
 
+    // Agrega una puntuación a la lista puntuaciones.
+    public void agregarPuntuacion(Puntuacion nuevaPuntuacion) {
+
+        for (Puntuacion p : this.puntuaciones) {
+            if (p.getUsuario().getIdUsuario().equals(nuevaPuntuacion.getUsuario().getIdUsuario())) {
+
+                throw new IllegalStateException("El usuario ya ha puntuado esta serie.");
+            }
+        }
+
+        this.puntuaciones.add(nuevaPuntuacion);
+        Double nota = nuevaPuntuacion.getPuntuacion();
+        recalcularPuntuacionMedia(nota);
+    }
+
+    // Recalcula la media de las puntuaciones.
+    private void recalcularPuntuacionMedia(Double nota) {
+
+        double suma = 0.0;
+
+        if (this.puntuaciones.size() == 1) {
+            suma = this.puntuacion + nota;
+            this.puntuacion = Math.round((suma/2) * 100.0) /100.0;
+            return; // Hacemos media con el valor existene.
+        }
+
+        for (Puntuacion p : this.puntuaciones) {
+            suma += p.getPuntuacion();
+        }
+
+        this.puntuacion = Math.round((suma / this.puntuaciones.size()) * 100.0) / 100.0;
+    }
+
     public String getNombre() {
         return nombre;
     }
@@ -104,38 +137,6 @@ public class Serie {
 
     public Double getPuntuacion() {
         return puntuacion;
-    }
-
-    // Agrega una puntuación a la lista puntuaciones.
-    public void agregarPuntuacion(Puntuacion nuevaPuntuacion) {
-        boolean puntuacionExistente = false;
-        for (Puntuacion p : this.puntuaciones) {
-            if (p.getUsuario().getIdUsuario().equals(nuevaPuntuacion.getUsuario().getIdUsuario())) {
-                p.setPuntuacion(nuevaPuntuacion.getPuntuacion());
-                puntuacionExistente = true;
-                break;
-            }
-        }
-
-        if (!puntuacionExistente) {
-            this.puntuaciones.add(nuevaPuntuacion);
-        }
-
-        recalcularPuntuacionMedia();
-    }
-
-    // Recalcula la media de las puntuaciones.
-    private void recalcularPuntuacionMedia() {
-        if (this.puntuaciones.isEmpty()) {
-            return; // Mantiene la puntuación actual predeterminada si no hay puntuaciones
-        }
-
-        double suma = 0.0;
-        for (Puntuacion p : this.puntuaciones) {
-            suma += p.getPuntuacion();
-        }
-
-        this.puntuacion = suma / this.puntuaciones.size();
     }
 
     public Director getDirector() {

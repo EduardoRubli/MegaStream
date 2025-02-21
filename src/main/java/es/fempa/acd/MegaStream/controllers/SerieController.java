@@ -48,12 +48,16 @@ public class SerieController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Serie no encontrada.");
     }
 
-    // Buscar series por nombre.
+    // Endpoint para buscar series por nombre parcial.
     @GetMapping("/cliente/series/buscarNombre")
     @JsonView(Views.Resumen.class)
-    public ResponseEntity<List<Serie>> buscarSeriesPorNombre(@RequestParam String nombre) {
+    public ResponseEntity<?> buscarSeriesPorNombre(@RequestParam String nombre) {
         List<Serie> series = serieService.obtenerSeriesPorNombre(nombre);
-        return series.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(series);
+        if (series.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("No se encontraron series que coincidan con: " + nombre);
+        }
+        return ResponseEntity.ok(series);
     }
 
     @GetMapping("/cliente/series/buscarGenero")
@@ -79,12 +83,15 @@ public class SerieController {
             Serie serie = serieOpt.get();
             Usuario usuario = usuarioOpt.get();
 
-            Puntuacion nuevaPuntuacion = new Puntuacion(serie, usuario, nota);
-            serie.agregarPuntuacion(nuevaPuntuacion);
+            try {
+                Puntuacion nuevaPuntuacion = new Puntuacion(serie, usuario, nota);
+                serie.agregarPuntuacion(nuevaPuntuacion);
 
-            serieService.actualizarSerie(idSerie, serie);
-            return ResponseEntity.ok("Puntuación agregada con éxito. " +
-                    "\nNueva nota media: " + serie.getPuntuacion());
+                serieService.actualizarSerie(idSerie, serie);
+                return ResponseEntity.ok("Puntuación agregada con éxito. \nNueva nota media: " + serie.getPuntuacion());
+            } catch (IllegalStateException e) {
+                return ResponseEntity.badRequest().body(e.getMessage());
+            }
         } else {
             return ResponseEntity.badRequest().body("Serie o usuario no encontrado");
         }

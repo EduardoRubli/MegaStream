@@ -136,6 +136,34 @@
       align-items: center;
       justify-content: center;
     }
+    /* Mensajes de error */
+    .error-message {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    padding: 20px;
+    margin: 20px 0;
+    text-align: center;
+    width: 100%;
+    border-left: 4px solid #e50914;
+    }
+    .error-message h3 {
+    color: #e50914;
+    margin-bottom: 10px;
+    font-size: 1.2em;
+    }
+    .error-message p {
+    color: #666;
+    line-height: 1.5;
+    }
+    /* Sin resultados */
+    .no-results {
+    width: 100%;
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+    font-size: 1.2em;
+    }
   </style>
 </head>
 <body>
@@ -213,16 +241,50 @@
       });
     }
 
-    // Función para buscar series por nombre.
-    function buscarPorNombre(nombre) {
-      fetch(`${BASE_URL}/cliente/series/buscarNombre?nombre=${encodeURIComponent(nombre)}`)
-        .then(response => response.json())
-        .then(data => mostrarResultados(data))
-        .catch(error => {
-          console.error('Error al buscar por nombre:', error);
-          alert('Error al buscar series por nombre.');
+    // Función de búsqueda para series
+function buscarPorNombre(nombre) {
+  fetch(`/cliente/series/buscarNombre?nombre=${encodeURIComponent(nombre)}`)
+    .then(response => {
+      if (response.status === 404) {
+        return response.text().then(mensaje => {
+          mostrarResultados([], mensaje); // Mensaje del backend
         });
-    }
+      }
+      return response.json().then(series => mostrarResultados(series));
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      mostrarResultados([], 'Error de conexión con el servidor');
+    });
+}
+
+// Función para mostrar resultados/errores
+function mostrarResultados(series, errorMessage = null) {
+  const gallery = document.getElementById('gallery');
+  gallery.innerHTML = '';
+
+  // Caso de error
+  if (errorMessage) {
+    gallery.innerHTML = `
+      <div class="error-message">
+        <h3>⚠️ Búsqueda sin resultados</h3>
+        <p>${errorMessage}</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Caso sin resultados
+  if (series.length === 0) {
+    gallery.innerHTML = '<p class="no-results">No se encontraron series</p>';
+    return;
+  }
+
+  // Mostrar tarjetas
+  series.forEach(serie => {
+    gallery.appendChild(createSerieCard(serie)); // Asume createSerieCard existe
+  });
+}
 
     // Función para buscar series por género.
     function buscarPorGenero(genero) {

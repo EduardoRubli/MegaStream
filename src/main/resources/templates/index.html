@@ -136,6 +136,25 @@
       align-items: center;
       justify-content: center;
     }
+    .error-message {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    padding: 20px;
+    margin: 20px 0;
+    text-align: center;
+    width: 100%;
+    border-left: 4px solid #e50914;
+    }
+    .error-message h3 {
+    color: #e50914;
+    margin-bottom: 10px;
+    font-size: 1.2em;
+    }
+    .error-message p {
+    color: #666;
+    line-height: 1.5;
+    }
   </style>
 </head>
 <body>
@@ -216,16 +235,43 @@
       });
     }
 
-    // Función para buscar películas por nombre.
-    function buscarPorNombre(nombre) {
-      fetch(`${BASE_URL}/cliente/peliculas/buscarNombre?nombre=${encodeURIComponent(nombre)}`)
-        .then(response => response.json())
-        .then(data => mostrarResultados(data))
+  function buscarPorNombre(nombre) {
+    fetch(`/cliente/peliculas/buscarNombre?nombre=${encodeURIComponent(nombre)}`)
+        .then(response => {
+            if (response.status === 404) { // Manejar específicamente el 404
+                return response.text().then(mensaje => {
+                    mostrarResultados([], mensaje); // Pasar mensaje directo
+                });
+            }
+            return response.json().then(peliculas => mostrarResultados(peliculas));
+        })
         .catch(error => {
-          console.error('Error al buscar por nombre:', error);
-          alert('Error al buscar películas por nombre.');
+            console.error('Error:', error);
+            mostrarResultados([], 'Error técnico al realizar la búsqueda');
         });
+  }
+
+  function mostrarResultados(peliculas, errorMessage = null) {
+    const gallery = document.getElementById('gallery');
+    gallery.innerHTML = '';
+
+    if (errorMessage) {
+        gallery.innerHTML = `
+            <div class="error-message">
+                <h3>⚠️ Búsqueda sin resultados</h3>
+                <p>${errorMessage}</p>
+            </div>
+        `;
+        return;
     }
+
+    if (peliculas.length === 0) {
+        gallery.innerHTML = '<p class="no-results">No hay coincidencias</p>';
+        return;
+    }
+
+    peliculas.forEach(movie => gallery.appendChild(createMovieCard(movie)));
+  }
 
     // Función para buscar películas por género.
     function buscarPorGenero(genero) {

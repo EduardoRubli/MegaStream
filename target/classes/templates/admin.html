@@ -89,7 +89,6 @@
       border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-
     #resultados pre {
       white-space: pre-wrap;
       word-wrap: break-word;
@@ -98,6 +97,26 @@
 	margin-top: 10px;
 	margin-bottom: 20px;
 	}
+    .error-message {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    padding: 20px;
+    margin: 20px 0;
+    border-left: 4px solid #8a060b;
+    }
+    .error-message h3 {
+    color: #8a060b;
+    margin-bottom: 10px;
+    }
+    .error-message p {
+     color: #666;
+    }
+    .no-results {
+    color: #666;
+    text-align: center;
+    padding: 20px;
+    }
   </style>
 </head>
 <body>
@@ -174,36 +193,92 @@
     });
   }
 
-  // Manejadores de eventos
+  // Función para buscar usuario por id.
   document.getElementById('buscarUsuarioIdForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const id = document.getElementById('buscarUsuarioId').value;
-    
-    fetch(`${BASE_URL}/admin/usuarios/${id}`)
-      .then(response => response.json())
-      .then(data => mostrarResultados([data]))
-      .catch(error => alert('Error: ' + error.message));
+  e.preventDefault();
+  const id = document.getElementById('buscarUsuarioId').value;
+
+  fetch(`${BASE_URL}/admin/usuarios/${id}`)
+    .then(response => {
+      if (!response.ok) {
+        return response.text().then(errorMessage => {
+          mostrarResultados([], errorMessage); // Capturar mensaje del backend
+        });
+      }
+      return response.json().then(data => mostrarResultados([data]));
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      mostrarResultados([], 'Error de conexión con el servidor');
+    });
   });
 
-  document.getElementById('buscarUsuarioEmailForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const email = document.getElementById('buscarUsuarioEmail').value;
-    
-    fetch(`${BASE_URL}/admin/usuarios/buscarEmail?email=${encodeURIComponent(email)}`)
-      .then(response => response.json())
-      .then(data => mostrarResultados([data]))
-      .catch(error => alert('Error: ' + error.message));
-  });
+  // Función para buscar usuario por email.
+document.getElementById('buscarUsuarioEmailForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const email = document.getElementById('buscarUsuarioEmail').value;
 
-  document.getElementById('buscarPeliculaIdForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const id = document.getElementById('buscarPeliculaId').value;
-    
-    fetch(`${BASE_URL}/cliente/peliculas/${id}`)
-      .then(response => response.json())
-      .then(data => mostrarResultados([data]))
-      .catch(error => alert('Error: ' + error.message));
+  fetch(`${BASE_URL}/admin/usuarios/buscarEmail?email=${encodeURIComponent(email)}`)
+    .then(response => {
+      if (!response.ok) {
+        return response.text().then(errorMessage => {
+          mostrarResultados([], errorMessage); // Mostrar mensaje del backend
+        });
+      }
+      return response.json().then(data => mostrarResultados([data]));
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      mostrarResultados([], 'Error al conectar con el servidor');
+    });
+});
+
+// Función para mostrarResultados.
+function mostrarResultados(data, errorMessage = null) {
+  const contenedor = document.getElementById('resultados');
+  contenedor.innerHTML = '';
+
+  if (errorMessage) {
+    contenedor.innerHTML = `
+      <div class="error-message">
+        <h3>⚠️ Error en la búsqueda</h3>
+        <p>${errorMessage}</p>
+      </div>
+    `;
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    contenedor.innerHTML = '<p class="no-results">No se encontraron resultados</p>';
+    return;
+  }
+
+  data.forEach(item => {
+    const pre = document.createElement('pre');
+    pre.textContent = JSON.stringify(item, null, 2);
+    contenedor.appendChild(pre);
   });
+}
+
+// Función para buscar película por id.
+document.getElementById('buscarPeliculaIdForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const id = document.getElementById('buscarPeliculaId').value;
+
+  fetch(`${BASE_URL}/cliente/peliculas/${id}`)
+    .then(response => {
+      if (!response.ok) {
+        return response.text().then(errorMessage => {
+          mostrarResultados([], errorMessage); // Mostrar mensaje del backend
+        });
+      }
+      return response.json().then(data => mostrarResultados([data]));
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      mostrarResultados([], 'Error al conectar con el servicio de películas');
+    });
+});
 
   document.getElementById('eliminarComentarioForm').addEventListener('submit', function(e) {
     e.preventDefault();

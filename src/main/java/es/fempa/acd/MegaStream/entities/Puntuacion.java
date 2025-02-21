@@ -37,7 +37,7 @@ public class Puntuacion {
 
     // Constructor de serie.
     public Puntuacion(Serie serie, Usuario usuario, Double puntuacion) {
-        this.pelicula = pelicula;
+        this.serie = serie;
         this.usuario = usuario;
         this.puntuacion = puntuacion;
     }

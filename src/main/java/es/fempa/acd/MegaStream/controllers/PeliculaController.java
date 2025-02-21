@@ -46,16 +46,17 @@ public class PeliculaController {
             return ResponseEntity.ok(pelicula);
         }
         // Devuelve un error 404 si no existe.
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Pelicula no encontrada.");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Película con id " + id + " no encontrada.");
     }
 
     // Endpoint para buscar películas por nombre parcial.
     @GetMapping("/cliente/peliculas/buscarNombre")
     @JsonView(Views.Resumen.class)
-    public ResponseEntity<List<Pelicula>> buscarPeliculasPorNombreParcial(@RequestParam String nombre) {
+    public ResponseEntity<?> buscarPeliculasPorNombreParcial(@RequestParam String nombre) {
         List<Pelicula> peliculas = peliculaService.obtenerPeliculasPorNombreParcial(nombre);
         if (peliculas.isEmpty()) {
-            return ResponseEntity.noContent().build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("No se encontraron películas que coincidan con: " + nombre);
         }
         return ResponseEntity.ok(peliculas);
     }
@@ -82,11 +83,15 @@ public class PeliculaController {
             Pelicula pelicula = peliculaOpt.get();
             Usuario usuario = usuarioOpt.get();
 
-            Puntuacion nuevaPuntuacion = new Puntuacion(pelicula, usuario, nota);
-            pelicula.agregarPuntuacion(nuevaPuntuacion);
+            try {
+                Puntuacion nuevaPuntuacion = new Puntuacion(pelicula, usuario, nota);
+                pelicula.agregarPuntuacion(nuevaPuntuacion);
 
-            peliculaService.actualizarPelicula(idPelicula, pelicula);
-            return ResponseEntity.ok("Puntuación agregada con éxito. \nNueva nota media: " + pelicula.getPuntuacion());
+                peliculaService.actualizarPelicula(idPelicula, pelicula);
+                return ResponseEntity.ok("Puntuación agregada con éxito. \nNueva nota media: " + pelicula.getPuntuacion());
+            } catch (IllegalStateException e) {
+                return ResponseEntity.badRequest().body(e.getMessage());
+            }
         } else {
             return ResponseEntity.badRequest().body("Pelicula o usuario no encontrado");
         }

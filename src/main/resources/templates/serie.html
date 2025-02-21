@@ -98,17 +98,6 @@
       border: 1px solid #ccc;
       border-radius: 4px;
     }
-    .comment-form button {
-      padding: 8px 16px;
-      background-color: #e50914;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .comment-form button:hover {
-      background-color: #bf0810;
-    }
     .comment-list {
       margin-top: 20px;
     }
@@ -120,6 +109,28 @@
     }
     .comment small {
       color: #666;
+    }
+    .button {
+    padding: 8px 16px;
+    background-color: #8a060b;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    }
+    .button:hover {
+    background-color: #b20710;
+    }
+    .puntuacion {
+    display: inline-block;
+    background-color: #8a060b;
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 1em;
     }
   </style>
 </head>
@@ -146,7 +157,7 @@
              required
              style="padding: 6px; width: 120px;">
       <button type="submit"
-              style="padding: 6px 12px; background-color: #e50914; color: white; border: none; border-radius: 4px;">
+              class="button">
         Enviar
       </button>
     </form>
@@ -164,7 +175,7 @@
       <h3>Agregar Comentario</h3>
       <form id="agregarComentarioForm">
         <textarea name="comentario" placeholder="Escribe tu comentario..." required></textarea>
-        <button type="submit">Enviar</button>
+        <button type="submit" class="button">Enviar</button>
         <div id="commentMessage"></div>
       </form>
     </div>
@@ -206,21 +217,26 @@
         return;
     }
 
-    // Usamos las variables ya existentes en el contexto
+    // Usamos las variables ya existentes en el contexto.
     fetch(`${BASE_URL}/cliente/series/puntuar`, {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: `idUsuario=${currentUserId}&idSerie=${serieId}&nota=${nota}`
     })
     .then(response => {
-        if (!response.ok) throw new Error('Error en la puntuación');
+        if (!response.ok) {
+          // Leemos el mensaje de error del backend antes de lanzar el error.
+          return response.text().then(errorMessage => {
+            throw new Error(errorMessage || 'Error en la puntuación');
+          });
+        }
         return response.text();
     })
     .then(message => {
         alert(message);
         this.reset();
         // Recargar detalles para actualizar puntuación media
-        cargarDetallePelicula();
+        cargarDetalleSerie();
     })
     .catch(error => {
         console.error('Error:', error);
@@ -253,7 +269,7 @@
       : '<p>No disponible</p>';
 
     infoDiv.innerHTML = `
-      <h2>${series.nombre}</h2>
+      <h2>${series.nombre} <span class="puntuacion">${series.puntuacion}</span></h2>
       <p><strong>Director:</strong> ${series.director && series.director.nombre ? series.director.nombre : 'No disponible'}</p>
       <p><strong>Actores:</strong> ${series.actores && series.actores.length ? series.actores.map(actor => actor.nombre).join(', ') : 'No disponible'}</p>
       <p><strong>Lista de capítulos:</strong></p>
@@ -331,7 +347,7 @@
         .catch(error => console.error('Error cargando comentarios:', error));
   }
 
-  // Función para eliminar comentario
+  // Función para eliminar comentario.
   function eliminarComentario(comentarioId) {
     fetch(`${BASE_URL}/cliente/comentarios/${comentarioId}`, {
         method: 'DELETE',
@@ -343,7 +359,7 @@
     .catch(error => alert(error.message));
   }
 
-  // Manejador para enviar un nuevo comentario (usando la lógica similar a la de película)
+  // Manejador para enviar un nuevo comentario.
   document.getElementById('agregarComentarioForm').addEventListener('submit', function(e) {
     e.preventDefault();
     const comentario = this.elements['comentario'].value.trim();

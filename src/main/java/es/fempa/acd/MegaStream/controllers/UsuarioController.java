@@ -89,6 +89,6 @@ public class UsuarioController {
             return ResponseEntity.ok(usuario);
         }
         // Devuelve un error 404 si no existe.
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado.");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario con id " + id  + " no encontrado.");
     }
 }
